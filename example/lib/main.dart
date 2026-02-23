@@ -46,10 +46,6 @@ class BiometricCryptoService {
   /// Check apakah biometric tersedia
   Future<bool> isBiometricAvailable() async {
     try {
-      // final authenticated = await _biometricCrypto.authenticate();
-      // if (!authenticated) {
-      //   return false;
-      // }
       return await _biometricCrypto.isBiometricAvailable();
     } catch (e) {
       print('Error checking biometric availability: $e');
@@ -70,6 +66,10 @@ class BiometricCryptoService {
   /// Generate key baru
   Future<bool> generateKey() async {
     try {
+      final authenticated = await _biometricCrypto.authenticate();
+      if (!authenticated) {
+        return false;
+      }
       await _biometricCrypto.generateKey(_keyAlias);
       return true;
     } catch (e) {
@@ -82,10 +82,10 @@ class BiometricCryptoService {
   Future<BiometricSignResult?> signWithBiometric(String challenge) async {
     try {
       // Authenticate user
-      final authenticated = await _biometricCrypto.authenticate();
-      if (!authenticated) {
-        return null;
-      }
+      // final authenticated = await _biometricCrypto.authenticate();
+      // if (!authenticated) {
+      //   return null;
+      // }
 
       // Sign dengan biometric
       final signature = await _biometricCrypto.sign(_keyAlias, challenge);

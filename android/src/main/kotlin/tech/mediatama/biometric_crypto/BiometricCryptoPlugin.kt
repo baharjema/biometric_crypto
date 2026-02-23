@@ -2,7 +2,8 @@ package tech.mediatama.biometric_crypto
 
 import android.content.Context
 import android.util.Base64
-
+import android.app.Activity
+//import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -42,6 +43,13 @@ class BiometricCryptoPlugin :
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity as FragmentActivity
+        // val currentActivity = binding.activity
+        // if (currentActivity is FragmentActivity) {
+        //     activity = currentActivity
+        // } else {
+        //     Log.e("BiometricCrypto", "GAGAL ATTACH ACTIVITY: MainActivity harus extends FlutterFragmentActivity, bukan FlutterActivity biasa.")
+        //     activity = null
+        // }
     }
 
     override fun onDetachedFromActivity() {

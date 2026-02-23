@@ -23,6 +23,10 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
       return
     }
     switch call.method {
+      case "isBiometricAvailable":
+        result(isBiometricAvailable())
+      case "keyExists":
+        result(keyExists(alias: alias))
       case "generateKey":
         generateKey(alias: alias, result: result)
       case "getPublicKey":
@@ -40,25 +44,27 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
   }
 
   private func keyExists(alias: String) -> Bool {
-    let query: [String: Any] = [
-        kSecClass as String: kSecClassKey,
-        kSecAttrApplicationTag as String: alias.data(using: .utf8)!,
-        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-        kSecReturnRef as String: true
-    ]
-
-    let status = SecItemCopyMatching(query as CFDictionary, nil)
-    return status == errSecSuccess
+      let tag = alias.data(using: .utf8)!
+      let query: [String: Any] = [
+          kSecClass as String: kSecClassKey,
+          kSecAttrApplicationTag as String: tag,
+          kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+          kSecReturnRef as String: false
+      ]
+      return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
   }
 
   private func isBiometricAvailable() -> Bool {
-    let context = LAContext()
-    var error: NSError?
 
-    return context.canEvaluatePolicy(
-        .deviceOwnerAuthenticationWithBiometrics,
-        error: &error
-    )
+      let context = LAContext()
+      var error: NSError?
+
+      let available = context.canEvaluatePolicy(
+          .deviceOwnerAuthenticationWithBiometrics,
+          error: &error
+      )
+
+      return available
   }
 
   private func authenticate(
@@ -78,131 +84,253 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
 
   private func generateKey(alias: String, result: FlutterResult) {
 
-    let tag = alias.data(using: .utf8)!
+      if keyExists(alias: alias) {
+          result(nil)
+          return
+      }
 
-    // Cek jika key sudah ada
-    let query: [String: Any] = [
-      kSecClass as String: kSecClassKey,
-      kSecAttrApplicationTag as String: tag,
-      kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-      kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
-    ]
+      let tag = alias.data(using: .utf8)!
 
-    var item: CFTypeRef?
-    if SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess {
-      result(nil) // key sudah ada
-      return
-    }
+      guard let access = SecAccessControlCreateWithFlags(
+          nil,
+          kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+          [.privateKeyUsage, .biometryCurrentSet],
+          nil
+      ) else {
+          result(FlutterError(code: "ACCESS_CONTROL_FAILED", message: nil, details: nil))
+          return
+      }
 
-    let access =
-      SecAccessControlCreateWithFlags(
-        nil,
-        kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        [.privateKeyUsage, .biometryCurrentSet],
-        nil
-      )!
-
-    let attributes: [String: Any] = [
-      kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-      kSecAttrKeySizeInBits as String: 256,
-      kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
-      kSecPrivateKeyAttrs as String: [
-        kSecAttrIsPermanent as String: true,
-        kSecAttrApplicationTag as String: tag,
-        kSecAttrAccessControl as String: access
+      let attributes: [String: Any] = [
+          kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+          kSecAttrKeySizeInBits as String: 256,
+          kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
+          kSecPrivateKeyAttrs as String: [
+              kSecAttrIsPermanent as String: true,
+              kSecAttrApplicationTag as String: tag,
+              kSecAttrAccessControl as String: access
+          ]
       ]
-    ]
 
-    var error: Unmanaged<CFError>?
-    guard SecKeyCreateRandomKey(attributes as CFDictionary, &error) != nil else {
-      result(FlutterError(
-        code: "KEY_GEN_FAILED",
-        message: error!.takeRetainedValue().localizedDescription,
-        details: nil
-      ))
-      return
-    }
+      var error: Unmanaged<CFError>?
+      guard SecKeyCreateRandomKey(attributes as CFDictionary, &error) != nil else {
+          result(FlutterError(
+              code: "KEY_GEN_FAILED",
+              message: error?.takeRetainedValue().localizedDescription,
+              details: nil
+          ))
+          return
+      }
 
-    result(nil)
+      result(nil)
   }
+
+  // private func generateKey(alias: String, result: FlutterResult) {
+
+  //   let tag = alias.data(using: .utf8)!
+
+  //   // Cek jika key sudah ada
+  //   let query: [String: Any] = [
+  //     kSecClass as String: kSecClassKey,
+  //     kSecAttrApplicationTag as String: tag,
+  //     kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+  //     kSecAttrKeyClass as String: kSecAttrKeyClassPrivate
+  //   ]
+
+  //   var item: CFTypeRef?
+  //   if SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess {
+  //     result(nil) // key sudah ada
+  //     return
+  //   }
+
+  //   let access =
+  //     SecAccessControlCreateWithFlags(
+  //       nil,
+  //       kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+  //       [.privateKeyUsage, .biometryCurrentSet],
+  //       nil
+  //     )!
+
+  //   let attributes: [String: Any] = [
+  //     kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+  //     kSecAttrKeySizeInBits as String: 256,
+  //     kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
+  //     kSecPrivateKeyAttrs as String: [
+  //       kSecAttrIsPermanent as String: true,
+  //       kSecAttrApplicationTag as String: tag,
+  //       kSecAttrAccessControl as String: access
+  //     ]
+  //   ]
+
+  //   var error: Unmanaged<CFError>?
+  //   guard SecKeyCreateRandomKey(attributes as CFDictionary, &error) != nil else {
+  //     result(FlutterError(
+  //       code: "KEY_GEN_FAILED",
+  //       message: error!.takeRetainedValue().localizedDescription,
+  //       details: nil
+  //     ))
+  //     return
+  //   }
+
+  //   result(nil)
+  // }
+
   private func getPublicKey(alias: String, result: FlutterResult) {
 
-    let tag = alias.data(using: .utf8)!
+      let tag = alias.data(using: .utf8)!
 
-    let query: [String: Any] = [
-      kSecClass as String: kSecClassKey,
-      kSecAttrApplicationTag as String: tag,
-      kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-      kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-      kSecReturnRef as String: true
-    ]
+      let query: [String: Any] = [
+          kSecClass as String: kSecClassKey,
+          kSecAttrApplicationTag as String: tag,
+          kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+          kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+          kSecReturnRef as String: true
+      ]
 
-    var item: CFTypeRef?
-    guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-          let privateKey = item as? SecKey
-    else {
-      result(FlutterError(code: "KEY_NOT_FOUND", message: nil, details: nil))
-      return
-    }
+      var item: CFTypeRef?
+      guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+            let privateKey = item as? SecKey,
+            let publicKey = SecKeyCopyPublicKey(privateKey),
+            let publicKeyData = SecKeyCopyExternalRepresentation(publicKey, nil) as Data?
+      else {
+          result(FlutterError(code: "KEY_NOT_FOUND", message: nil, details: nil))
+          return
+      }
 
-    guard let publicKey = SecKeyCopyPublicKey(privateKey),
-          let data = SecKeyCopyExternalRepresentation(publicKey, nil) as Data?
-    else {
-      result(FlutterError(code: "PUBKEY_FAILED", message: nil, details: nil))
-      return
-    }
-
-    // DER / SPKI compatible dengan .NET
-    result(data.base64EncodedString())
+      result(publicKeyData.base64EncodedString())
   }
 
+  // private func getPublicKey(alias: String, result: FlutterResult) {
+
+  //   let tag = alias.data(using: .utf8)!
+
+  //   let query: [String: Any] = [
+  //     kSecClass as String: kSecClassKey,
+  //     kSecAttrApplicationTag as String: tag,
+  //     kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+  //     kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+  //     kSecReturnRef as String: true
+  //   ]
+
+  //   var item: CFTypeRef?
+  //   guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+  //         let privateKey = item as? SecKey
+  //   else {
+  //     result(FlutterError(code: "KEY_NOT_FOUND", message: nil, details: nil))
+  //     return
+  //   }
+
+  //   guard let publicKey = SecKeyCopyPublicKey(privateKey),
+  //         let data = SecKeyCopyExternalRepresentation(publicKey, nil) as Data?
+  //   else {
+  //     result(FlutterError(code: "PUBKEY_FAILED", message: nil, details: nil))
+  //     return
+  //   }
+
+  //   // DER / SPKI compatible dengan .NET
+  //   result(data.base64EncodedString())
+  // }
+
   private func sign(
-  alias: String,
-  challenge: String,
-  result: @escaping FlutterResult
-  ) {
+    alias: String,
+    challenge: String,
+    result: @escaping FlutterResult
+) {
+
+    if !isBiometricAvailable() {
+        result(FlutterError(code: "BIOMETRIC_NOT_AVAILABLE", message: nil, details: nil))
+        return
+    }
 
     let context = LAContext()
-    context.localizedReason = "Login dengan Face ID"
+    context.localizedReason = "Authenticate to sign"
 
     let tag = alias.data(using: .utf8)!
-    let data = challenge.data(using: .utf8)!
+    let challengeData = challenge.data(using: .utf8)!
 
     let query: [String: Any] = [
-      kSecClass as String: kSecClassKey,
-      kSecAttrApplicationTag as String: tag,
-      kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-      kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-      kSecReturnRef as String: true,
-      kSecUseAuthenticationContext as String: context
+        kSecClass as String: kSecClassKey,
+        kSecAttrApplicationTag as String: tag,
+        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+        kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+        kSecReturnRef as String: true,
+        kSecUseAuthenticationContext as String: context
     ]
 
     var item: CFTypeRef?
     guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
           let privateKey = item as? SecKey
     else {
-      result(FlutterError(code: "KEY_NOT_FOUND", message: nil, details: nil))
-      return
+        result(FlutterError(code: "KEY_NOT_FOUND", message: nil, details: nil))
+        return
     }
 
     var error: Unmanaged<CFError>?
     guard let signature = SecKeyCreateSignature(
-      privateKey,
-      .ecdsaSignatureMessageX962SHA256,
-      data as CFData,
-      &error
+        privateKey,
+        .ecdsaSignatureMessageX962SHA256,
+        challengeData as CFData,
+        &error
     ) as Data?
     else {
-      result(FlutterError(
-        code: "SIGN_FAILED",
-        message: error!.takeRetainedValue().localizedDescription,
-        details: nil
-      ))
-      return
+        result(FlutterError(
+            code: "SIGN_FAILED",
+            message: error?.takeRetainedValue().localizedDescription,
+            details: nil
+        ))
+        return
     }
 
     result(signature.base64EncodedString())
-  }
+}
+
+  // private func sign(
+  // alias: String,
+  // challenge: String,
+  // result: @escaping FlutterResult
+  // ) {
+
+  //   let context = LAContext()
+  //   context.localizedReason = "Login dengan Face ID"
+
+  //   let tag = alias.data(using: .utf8)!
+  //   let data = challenge.data(using: .utf8)!
+
+  //   let query: [String: Any] = [
+  //     kSecClass as String: kSecClassKey,
+  //     kSecAttrApplicationTag as String: tag,
+  //     kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+  //     kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+  //     kSecReturnRef as String: true,
+  //     kSecUseAuthenticationContext as String: context
+  //   ]
+
+  //   var item: CFTypeRef?
+  //   guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+  //         let privateKey = item as? SecKey
+  //   else {
+  //     result(FlutterError(code: "KEY_NOT_FOUND", message: nil, details: nil))
+  //     return
+  //   }
+
+  //   var error: Unmanaged<CFError>?
+  //   guard let signature = SecKeyCreateSignature(
+  //     privateKey,
+  //     .ecdsaSignatureMessageX962SHA256,
+  //     data as CFData,
+  //     &error
+  //   ) as Data?
+  //   else {
+  //     result(FlutterError(
+  //       code: "SIGN_FAILED",
+  //       message: error!.takeRetainedValue().localizedDescription,
+  //       details: nil
+  //     ))
+  //     return
+  //   }
+
+  //   result(signature.base64EncodedString())
+  // }
 
   private func deleteKey(alias: String, result: FlutterResult) {
 

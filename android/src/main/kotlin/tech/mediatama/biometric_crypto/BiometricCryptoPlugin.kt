@@ -5,11 +5,33 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import androidx.fragment.app.FragmentActivity
 
 /** BiometricCryptoPlugin */
 class BiometricCryptoPlugin :
     FlutterPlugin,
-    MethodCallHandler {
+    MethodCallHandler,
+    ActivityAware {
+
+    private var activity: FragmentActivity? = null
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity as FragmentActivity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        onAttachedToActivity(binding)
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
     // The MethodChannel that will the communication between Flutter and native Android
     //
     // This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -30,14 +52,22 @@ class BiometricCryptoPlugin :
     ) {
         val alias = call.argument<String>("alias")!!
         when (call.method) {
+            "isBiometricAvailable" -> {
+                val available = isBiometricAvailable()
+                result.success(available)
+            }
+            "keyExists" -> {
+                val exists = keyExists(alias)
+                result.success(exists)
+            }
             "generateKey" -> {
                 generateKey(alias)
                 result.success(null)
             }
             "sign" -> {
                 val challenge = call.argument<String>("challenge")!!
-                val sig = sign(alias, challenge)
-                result.success(sig)
+                signWithBiometric(alias, challenge, result)
+                //result.success(sig)
             }
             "getPublicKey" -> {
                 val publicKey = getPublicKeyBase64(alias)
@@ -62,14 +92,11 @@ class BiometricCryptoPlugin :
         return keystore.containsAlias(alias)
     }
 
-    private fun isBiometricAvailable(context: Context): Boolean {
-        val biometricManager = BiometricManager.from(context)
-        return when (biometricManager.canAuthenticate(
+    private fun isBiometricAvailable(): Boolean {
+        val manager = BiometricManager.from(activity!!)
+        return manager.canAuthenticate(
             BiometricManager.Authenticators.BIOMETRIC_STRONG
-        )) {
-            BiometricManager.BIOMETRIC_SUCCESS -> true
-            else -> false
-        }
+        ) == BiometricManager.BIOMETRIC_SUCCESS
     }
 
     private fun authenticate(
@@ -154,20 +181,19 @@ class BiometricCryptoPlugin :
     }
 
     private fun signWithBiometric(
-        activity: FragmentActivity,
-        alias: String,
-        challenge: String,
-        result: MethodChannel.Result
-        ) {
+    alias: String,
+    challenge: String,
+    result: MethodChannel.Result
+    ) {
 
         val privateKey = keystore.getKey(alias, null) as PrivateKey
         val signature = Signature.getInstance("SHA256withECDSA")
         signature.initSign(privateKey)
 
-        val executor = ContextCompat.getMainExecutor(activity)
+        val executor = ContextCompat.getMainExecutor(activity!!)
 
         val biometricPrompt = BiometricPrompt(
-            activity,
+            activity!!,
             executor,
             object : BiometricPrompt.AuthenticationCallback() {
 
@@ -175,15 +201,17 @@ class BiometricCryptoPlugin :
                     authResult: BiometricPrompt.AuthenticationResult
                 ) {
                     val crypto = authResult.cryptoObject?.signature
-                    crypto?.update(challenge.toByteArray(Charsets.UTF_8))
+
+                    val challengeHash =
+                        MessageDigest.getInstance("SHA-256")
+                            .digest(challenge.toByteArray(Charsets.UTF_8))
+
+                    crypto?.update(challengeHash)
                     val signed = crypto?.sign()
 
-                    val base64 = Base64.encodeToString(
-                        signed,
-                        Base64.NO_WRAP
+                    result.success(
+                        Base64.encodeToString(signed, Base64.NO_WRAP)
                     )
-
-                    result.success(base64)
                 }
 
                 override fun onAuthenticationError(
@@ -196,7 +224,8 @@ class BiometricCryptoPlugin :
         )
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Sign with biometrics")
+            .setTitle("Biometric Authentication")
+            .setSubtitle("Confirm to sign challenge")
             .setAllowedAuthenticators(
                 BiometricManager.Authenticators.BIOMETRIC_STRONG
             )

@@ -46,6 +46,10 @@ class BiometricCryptoService {
   /// Check apakah biometric tersedia
   Future<bool> isBiometricAvailable() async {
     try {
+      // final authenticated = await _biometricCrypto.authenticate();
+      // if (!authenticated) {
+      //   return false;
+      // }
       return await _biometricCrypto.isBiometricAvailable();
     } catch (e) {
       print('Error checking biometric availability: $e');
@@ -221,13 +225,15 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
 
       if (keyExist) {
         setState(() {
-          _statusMessage = '✓ Biometric tersedia\n✓ Key sudah ada\n\nSiap untuk sign dengan biometric';
+          _statusMessage =
+              '✓ Biometric tersedia\n✓ Key sudah ada\n\nSiap untuk sign dengan biometric';
           _isLoading = false;
           _isInitialized = true;
         });
       } else {
         setState(() {
-          _statusMessage = '✓ Biometric tersedia\n❌ Key belum ada\n\nKlik "Generate Key" untuk membuat key baru';
+          _statusMessage =
+              '✓ Biometric tersedia\n❌ Key belum ada\n\nKlik "Generate Key" untuk membuat key baru';
           _isLoading = false;
           _isInitialized = true;
         });
@@ -258,7 +264,8 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
       if (success) {
         setState(() {
           _keyExists = true;
-          _statusMessage = '✓ Biometric tersedia\n✓ Key berhasil dibuat\n\nSiap untuk sign dengan biometric';
+          _statusMessage =
+              '✓ Biometric tersedia\n✓ Key berhasil dibuat\n\nSiap untuk sign dengan biometric';
           _isLoading = false;
         });
       } else {
@@ -316,9 +323,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Biometric Crypto Demo'),
-      ),
+      appBar: AppBar(title: const Text('Biometric Crypto Demo')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -340,10 +345,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      _statusMessage,
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    Text(_statusMessage, style: const TextStyle(fontSize: 14)),
                   ],
                 ),
               ),
@@ -354,10 +356,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
             if (_isInitialized) ...[
               const Text(
                 'Flow Biometric Signin',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               _buildFlowStep(
@@ -399,10 +398,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
                 const SizedBox(height: 24),
                 const Text(
                   'Hasil Sign',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 _buildResultField(
@@ -434,9 +430,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32.0),
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               ),
           ],
         ),
@@ -452,9 +446,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: isCompleted ? Colors.green : Colors.grey,
-        ),
+        border: Border.all(color: isCompleted ? Colors.green : Colors.grey),
         borderRadius: BorderRadius.circular(8),
         color: isCompleted ? Colors.green.shade50 : Colors.grey.shade50,
       ),
@@ -483,21 +475,19 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
               title,
               style: TextStyle(
                 fontSize: 14,
-                color: isCompleted ? Colors.green.shade900 : Colors.grey.shade700,
+                color: isCompleted
+                    ? Colors.green.shade900
+                    : Colors.grey.shade700,
               ),
             ),
           ),
-          if (isCompleted)
-            const Icon(Icons.check_circle, color: Colors.green),
+          if (isCompleted) const Icon(Icons.check_circle, color: Colors.green),
         ],
       ),
     );
   }
 
-  Widget _buildResultField({
-    required String label,
-    required String value,
-  }) {
+  Widget _buildResultField({required String label, required String value}) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -519,10 +509,7 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
           const SizedBox(height: 8),
           SelectableText(
             value,
-            style: const TextStyle(
-              fontSize: 12,
-              fontFamily: 'monospace',
-            ),
+            style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
           ),
         ],
       ),

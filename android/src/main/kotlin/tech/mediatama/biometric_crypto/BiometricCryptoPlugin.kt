@@ -1,5 +1,21 @@
 package tech.mediatama.biometric_crypto
 
+import android.content.Context
+import android.util.Base64
+
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+
+import java.security.KeyStore
+import java.security.KeyPairGenerator
+import java.security.PrivateKey
+import java.security.Signature
+import java.security.MessageDigest
+
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -15,7 +31,14 @@ class BiometricCryptoPlugin :
     MethodCallHandler,
     ActivityAware {
 
+    // The MethodChannel that will the communication between Flutter and native Android
+    //
+    // This local reference serves to register the plugin with the Flutter Engine and unregister it
+    // when the Flutter Engine is detached from the Activity
+    private lateinit var channel: MethodChannel
+    private val keystore = KeyStore.getInstance("AndroidKeyStore")
     private var activity: FragmentActivity? = null
+    private lateinit var appContext: Context
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity as FragmentActivity
@@ -32,50 +55,60 @@ class BiometricCryptoPlugin :
     override fun onDetachedFromActivityForConfigChanges() {
         activity = null
     }
-    // The MethodChannel that will the communication between Flutter and native Android
-    //
-    // This local reference serves to register the plugin with the Flutter Engine and unregister it
-    // when the Flutter Engine is detached from the Activity
-    private lateinit var channel: MethodChannel
-    private val keystore = KeyStore.getInstance("AndroidKeyStore")
-
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        appContext = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "biometric_crypto")
         channel.setMethodCallHandler(this)
         keystore.load(null)
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
     }
 
     override fun onMethodCall(
         call: MethodCall,
         result: Result
     ) {
-        val alias = call.argument<String>("alias")!!
+        //val alias = call.argument<String>("alias")!!
         when (call.method) {
             "isBiometricAvailable" -> {
-                val available = isBiometricAvailable()
-                result.success(available)
+                isBiometricAvailable(result)
             }
             "keyExists" -> {
+                val alias = requireString(call, "alias", result) ?: return
                 val exists = keyExists(alias)
                 result.success(exists)
             }
             "generateKey" -> {
+                val alias = requireString(call, "alias", result) ?: return
                 generateKey(alias)
                 result.success(null)
             }
+            "authenticate" -> {
+                if (activity == null) {
+                    result.error(
+                        "NO_ACTIVITY",
+                        "Plugin requires a foreground activity.",
+                        null
+                    )
+                    return
+                }
+                authenticate(activity!!, result)
+            }
             "sign" -> {
-                val challenge = call.argument<String>("challenge")!!
+                val alias = requireString(call, "alias", result) ?: return
+                val challenge = requireString(call, "challenge", result) ?: return
                 signWithBiometric(alias, challenge, result)
-                //result.success(sig)
             }
             "getPublicKey" -> {
-                val publicKey = getPublicKeyBase64(alias)
-                result.success(publicKey)
+                val alias = requireString(call, "alias", result) ?: return
+                getPublicKeyBase64(alias, result)
             }
             "deleteKey" -> {
-                keystore.deleteEntry(alias)
-                result.success(null)
+                val alias = requireString(call, "alias", result) ?: return
+                deleteKey(alias, result)
             }
             "getPlatformVersion" -> {
                 result.success("Android ${android.os.Build.VERSION.RELEASE}")
@@ -84,19 +117,71 @@ class BiometricCryptoPlugin :
         }
     }
 
-    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
+    private fun requireString(
+        call: MethodCall,
+        key: String,
+        result: MethodChannel.Result
+    ): String? {
+        val value = call.argument<String>(key)
+        if (value.isNullOrBlank()) {
+            result.error(
+                "INVALID_ARGS",
+                "$key is required",
+                null
+            )
+            return null
+        }
+        return value
     }
 
     private fun keyExists(alias: String): Boolean {
         return keystore.containsAlias(alias)
     }
 
-    private fun isBiometricAvailable(): Boolean {
-        val manager = BiometricManager.from(activity!!)
-        return manager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG
-        ) == BiometricManager.BIOMETRIC_SUCCESS
+    private fun deleteKey(alias: String, result: MethodChannel.Result) {
+        try{
+            if (keystore.containsAlias(alias)) {
+                keystore.deleteEntry(alias)
+            }
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("KEYSTORE_ERROR", e.message, null)
+        }
+    }
+
+    private fun isBiometricAvailable(result: MethodChannel.Result){
+        val ctx: Context = activity ?: appContext
+        if (ctx == null) {
+            result.error("NO_CONTEXT", "No context available", null)
+            return
+        }
+        try {
+            val manager = BiometricManager.from(ctx)
+            val canAuthenticate = manager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
+            
+            android.util.Log.d("BiometricCrypto", "canAuthenticate result: $canAuthenticate")
+            
+            when(canAuthenticate) {
+                BiometricManager.BIOMETRIC_SUCCESS -> {
+                    result.success(true)
+                }
+                11 -> {
+                    // BIOMETRIC_ERROR_NONE_ENROLLED / NO_BIOMETRICS
+                    result.error("NO_BIOMETRICS", "No biometrics enrolled on this device", null)
+                }
+                BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
+                    result.error("HW_UNAVAILABLE", "Biometric hardware unavailable", null)
+                }
+                else -> {
+                    result.error("BIOMETRIC_NOT_AVAILABLE", "Biometric authentication is not available: $canAuthenticate", null)
+                }
+            }
+        } catch (e: Exception) {
+            result.error("BIOMETRIC_ERROR", e.message, null)
+        }
     }
 
     private fun authenticate(
@@ -166,9 +251,9 @@ class BiometricCryptoPlugin :
             )
             .build()
         )
-
         kpg.generateKeyPair()
     }
+
     private fun sign(alias: String, challenge: String): String {
         val privateKey = keystore.getKey(alias, null) as PrivateKey
 
@@ -237,9 +322,17 @@ class BiometricCryptoPlugin :
         )
     }
 
-    private fun getPublicKeyBase64(alias: String): String {
-        val cert = keystore.getCertificate(alias)
-        val publicKey = cert.publicKey.encoded
-        return Base64.encodeToString(publicKey, Base64.NO_WRAP)
+    private fun getPublicKeyBase64(alias: String, result: MethodChannel.Result) {
+        try{
+            if (!keystore.containsAlias(alias)) {
+                result.error("KEY_NOT_FOUND", "Key with alias $alias not found", null)
+            }
+            val cert = keystore.getCertificate(alias)
+            val publicKey = cert.publicKey.encoded
+            val base64PublicKey = Base64.encodeToString(publicKey, Base64.NO_WRAP)
+            result.success(base64PublicKey)
+        } catch (e: Exception) {
+            result.error("KEYSTORE_ERROR", e.message, null)
+        }
     }
 }

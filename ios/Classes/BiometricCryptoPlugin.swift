@@ -39,6 +39,43 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
     }
   }
 
+  private func keyExists(alias: String) -> Bool {
+    let query: [String: Any] = [
+        kSecClass as String: kSecClassKey,
+        kSecAttrApplicationTag as String: alias.data(using: .utf8)!,
+        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+        kSecReturnRef as String: true
+    ]
+
+    let status = SecItemCopyMatching(query as CFDictionary, nil)
+    return status == errSecSuccess
+  }
+
+  private func isBiometricAvailable() -> Bool {
+    let context = LAContext()
+    var error: NSError?
+
+    return context.canEvaluatePolicy(
+        .deviceOwnerAuthenticationWithBiometrics,
+        error: &error
+    )
+  }
+
+  private func authenticate(
+    completion: @escaping (Bool, Error?) -> Void
+  ) {
+      let context = LAContext()
+
+      context.evaluatePolicy(
+          .deviceOwnerAuthenticationWithBiometrics,
+          localizedReason: "Authenticate to continue"
+      ) { success, error in
+          DispatchQueue.main.async {
+              completion(success, error)
+          }
+      }
+  }
+
   private func generateKey(alias: String, result: FlutterResult) {
 
     let tag = alias.data(using: .utf8)!

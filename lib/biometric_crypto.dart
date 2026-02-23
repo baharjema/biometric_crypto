@@ -1,33 +1,20 @@
-import 'package:flutter/services.dart';
-
 import 'biometric_crypto_platform_interface.dart';
 
 class BiometricCrypto {
-  static const MethodChannel _channel = MethodChannel('biometric_crypto');
-
-  static Future<void> generateKey(String alias) async {
-    await _channel.invokeMethod('generateKey', {'alias': alias});
+  Future<void> generateKey(String alias) {
+    return BiometricCryptoPlatform.instance.generateKey(alias);
   }
 
-  static Future<String> getPublicKey(String alias) async {
-    final publicKey = await _channel.invokeMethod<String>('getPublicKey', {
-      'alias': alias,
-    });
-    return publicKey!;
+  Future<String> getPublicKey(String alias) {
+    return BiometricCryptoPlatform.instance.getPublicKey(alias);
   }
 
-  /// Sign challenge (biometric prompt muncul di sini)
-  static Future<String> sign(String alias, String challenge) async {
-    final signature = await _channel.invokeMethod<String>('sign', {
-      'alias': alias,
-      'challenge': challenge,
-    });
-    return signature!;
+  Future<String> sign(String alias, String challenge) {
+    return BiometricCryptoPlatform.instance.sign(alias, challenge);
   }
 
-  /// Delete key (revoke local)
-  static Future<void> deleteKey(String alias) async {
-    await _channel.invokeMethod('deleteKey', {'alias': alias});
+  Future<void> deleteKey(String alias) {
+    return BiometricCryptoPlatform.instance.deleteKey(alias);
   }
 
   Future<String?> getPlatformVersion() {

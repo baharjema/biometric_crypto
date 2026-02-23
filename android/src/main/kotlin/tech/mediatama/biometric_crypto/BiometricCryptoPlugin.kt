@@ -187,25 +187,20 @@ class BiometricCryptoPlugin :
     private fun authenticate(
         activity: FragmentActivity,
         result: MethodChannel.Result
-        ) {
-
+    ) {
         val executor = ContextCompat.getMainExecutor(activity)
-
         val biometricPrompt = BiometricPrompt(
             activity,
             executor,
             object : BiometricPrompt.AuthenticationCallback() {
-
                 override fun onAuthenticationSucceeded(
                     authenticationResult: BiometricPrompt.AuthenticationResult
                 ) {
                     result.success(true)
                 }
-
                 override fun onAuthenticationFailed() {
                     result.success(false)
                 }
-
                 override fun onAuthenticationError(
                     errorCode: Int,
                     errString: CharSequence
@@ -223,7 +218,8 @@ class BiometricCryptoPlugin :
             .setTitle("Authenticate")
             .setSubtitle("Confirm your identity")
             .setAllowedAuthenticators(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
             .build()
 
@@ -232,12 +228,10 @@ class BiometricCryptoPlugin :
 
     private fun generateKey(alias: String) {
         if (keystore.containsAlias(alias)) return
-
         val kpg = KeyPairGenerator.getInstance(
             KeyProperties.KEY_ALGORITHM_EC,
             "AndroidKeyStore"
         )
-
         kpg.initialize(
             KeyGenParameterSpec.Builder(
             alias,
@@ -256,27 +250,22 @@ class BiometricCryptoPlugin :
 
     private fun sign(alias: String, challenge: String): String {
         val privateKey = keystore.getKey(alias, null) as PrivateKey
-
         val signature = Signature.getInstance("SHA256withECDSA")
         signature.initSign(privateKey)
         signature.update(challenge.toByteArray(Charsets.UTF_8))
-
         val signed = signature.sign()
         return Base64.encodeToString(signed, Base64.NO_WRAP)
     }
 
     private fun signWithBiometric(
-    alias: String,
-    challenge: String,
-    result: MethodChannel.Result
+        alias: String,
+        challenge: String,
+        result: MethodChannel.Result
     ) {
-
         val privateKey = keystore.getKey(alias, null) as PrivateKey
         val signature = Signature.getInstance("SHA256withECDSA")
         signature.initSign(privateKey)
-
         val executor = ContextCompat.getMainExecutor(activity!!)
-
         val biometricPrompt = BiometricPrompt(
             activity!!,
             executor,
@@ -312,7 +301,8 @@ class BiometricCryptoPlugin :
             .setTitle("Biometric Authentication")
             .setSubtitle("Confirm to sign challenge")
             .setAllowedAuthenticators(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
             .build()
 
@@ -323,7 +313,7 @@ class BiometricCryptoPlugin :
     }
 
     private fun getPublicKeyBase64(alias: String, result: MethodChannel.Result) {
-        try{
+        try {
             if (!keystore.containsAlias(alias)) {
                 result.error("KEY_NOT_FOUND", "Key with alias $alias not found", null)
             }

@@ -8,6 +8,7 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "biometric_crypto", binaryMessenger: registrar.messenger())
     let instance = BiometricCryptoPlugin()
+    instance.checkAndClearOnFreshInstall()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 
@@ -70,6 +71,16 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
       default:
         result(FlutterMethodNotImplemented)
     }
+  }
+
+  private func checkAndClearOnFreshInstall() {
+      let defaults = UserDefaults.standard
+      let hasRunBeforeKey = "hasRunBefore_BiometricCrypto"
+      
+      if !defaults.bool(forKey: hasRunBeforeKey) {
+          clearKeys()
+          defaults.set(true, forKey: hasRunBeforeKey)
+      }
   }
 
   private func requireString(
@@ -277,5 +288,13 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
       ]
       SecItemDelete(query as CFDictionary)
       result(nil)
+  }
+
+  private func clearKeys(){
+     let query: [String: Any] = [
+        kSecClass as String: kSecClassKey,
+        kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom
+      ]
+      SecItemDelete(query as CFDictionary)
   }
 }

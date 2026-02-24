@@ -194,6 +194,8 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
     });
 
     try {
+      //Step 0 Delete key untuk testing ulang
+      await _service.deleteKey();
       // Step 1: Check biometric available
       final isBioAvailable = await _service.isBiometricAvailable();
       if (!mounted) return;

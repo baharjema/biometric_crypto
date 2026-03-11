@@ -1,3 +1,8 @@
+## 1.0.1
+
+- Add comprehensive dartdoc comments for all public API elements
+- Enable public_member_api_docs lint rule
+
 ## 1.0.0
 
 - Initial release of biometric_crypto plugin

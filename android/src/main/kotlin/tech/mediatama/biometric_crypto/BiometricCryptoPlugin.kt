@@ -207,7 +207,7 @@ class BiometricCryptoPlugin :
                     result.success(true)
                 }
                 override fun onAuthenticationFailed() {
-                    result.success(false)
+                    //result.success(false)
                 }
                 override fun onAuthenticationError(
                     errorCode: Int,

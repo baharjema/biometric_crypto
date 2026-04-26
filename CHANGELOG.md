@@ -1,3 +1,5 @@
+## 1.0.2
+- Remove result from android when failed
 ## 1.0.1
 
 - Add comprehensive dartdoc comments for all public API elements

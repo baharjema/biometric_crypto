@@ -18,6 +18,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+  device_info_plus: ^13.1.0
+
   biometric_crypto:
     # When depending on this package from a real application you should use:
     #   biometric_crypto: ^x.y.z

@@ -1,18 +1,23 @@
 PODS:
   - biometric_crypto (0.0.1):
     - Flutter
+  - device_info_plus (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - integration_test (0.0.1):
     - Flutter
 
 DEPENDENCIES:
   - biometric_crypto (from `.symlinks/plugins/biometric_crypto/ios`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
 
 EXTERNAL SOURCES:
   biometric_crypto:
     :path: ".symlinks/plugins/biometric_crypto/ios"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
   integration_test:
@@ -20,6 +25,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   biometric_crypto: 08872a0eef400adff642eddefdacfdf64cb968f6
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
 

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:biometric_crypto/biometric_crypto.dart';
@@ -81,11 +84,13 @@ class BiometricCryptoService {
   /// Authenticate dengan biometric dan sign data
   Future<BiometricSignResult?> signWithBiometric(String challenge) async {
     try {
-      // Authenticate user
-      // final authenticated = await _biometricCrypto.authenticate();
-      // if (!authenticated) {
-      //   return null;
-      // }
+      // Authenticate user if ios emualator
+      if (await isIosEmulator()) {
+        final authenticated = await _biometricCrypto.authenticate();
+        if (!authenticated) {
+          throw Exception('Authentication failed on iOS emulator');
+        }
+      }
 
       // Sign dengan biometric
       final signature = await _biometricCrypto.sign(_keyAlias, challenge);
@@ -124,6 +129,20 @@ class BiometricCryptoService {
     } catch (e) {
       print('Error deleting key: $e');
       rethrow;
+    }
+  }
+
+  Future<bool> isIosEmulator() async {
+    try {
+      if (Platform.isIOS) {
+        final deviceInfo = DeviceInfoPlugin();
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.isPhysicalDevice == false;
+      }
+      return false;
+    } catch (e) {
+      print('Error checking if iOS emulator: $e');
+      return false;
     }
   }
 }

@@ -229,7 +229,18 @@ public class BiometricCryptoPlugin: NSObject, FlutterPlugin {
           result(FlutterError(code: "PUBKEY_FAILED", message: nil, details: nil))
           return
       }
-      result(publicKeyData.base64EncodedString())
+      let spkiHeader: [UInt8] = [
+        0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01,
+        0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00
+    ]
+    
+    // Gabungkan Header dengan Raw Data iOS
+    var spkiData = Data(spkiHeader)
+    spkiData.append(publicKeyData)
+    
+    // Return SPKI Data ke Flutter (lalu teruskan ke Server)
+    result(spkiData.base64EncodedString())
+    //result(publicKeyData.base64EncodedString())
   }
 
   private func sign(

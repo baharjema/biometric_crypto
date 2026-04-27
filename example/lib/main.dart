@@ -296,10 +296,15 @@ class _BiometricCryptoDemoState extends State<BiometricCryptoDemo> {
 
     try {
       // Generate random challenge
-      final challenge = DateTime.now().millisecondsSinceEpoch.toString();
+      final challenge =
+          "TESTING_CHALLENGE_FROM_APP"; //DateTime.now().millisecondsSinceEpoch.toString();
 
       final result = await _service.signWithBiometric(challenge);
       if (!mounted) return;
+
+      debugPrint(
+        'Sign result: ${result!.challenge}, ${result!.signature}, ${result!.publicKey}',
+      );
 
       if (result != null) {
         setState(() {

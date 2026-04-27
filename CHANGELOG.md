@@ -1,3 +1,5 @@
+## 1.0.3
+- Add SPKI to publicKey IOS
 ## 1.0.2
 - Remove result from android when failed
 ## 1.0.1

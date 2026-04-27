@@ -1,6 +1,6 @@
 name: biometric_crypto
 description: Flutter plugin for secure biometric-based cryptographic operations using Android Keystore and iOS Secure Enclave.
-version: 1.0.3
+version: 1.0.4
 homepage: "https://github.com/baharjema/biometric_crypto"
 repository: https://github.com/baharjema/biometric_crypto
 issue_tracker: https://github.com/baharjema/biometric_crypto/issues

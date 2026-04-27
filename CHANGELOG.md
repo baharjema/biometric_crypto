@@ -1,7 +1,16 @@
+## 1.0.4
+
+- Add device_info_plus to example
+- Use device_info_plus to check is ios emulator to trigger face id
+
 ## 1.0.3
+
 - Add SPKI to publicKey IOS
+
 ## 1.0.2
+
 - Remove result from android when failed
+
 ## 1.0.1
 
 - Add comprehensive dartdoc comments for all public API elements

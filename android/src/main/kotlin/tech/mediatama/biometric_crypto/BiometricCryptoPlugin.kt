@@ -283,12 +283,13 @@ class BiometricCryptoPlugin :
                     authResult: BiometricPrompt.AuthenticationResult
                 ) {
                     val crypto = authResult.cryptoObject?.signature
+                    requireNotNull(crypto) { "CryptoObject signature is null" }
 
-                    val challengeHash =
-                        MessageDigest.getInstance("SHA-256")
-                            .digest(challenge.toByteArray(Charsets.UTF_8))
-
-                    crypto?.update(challengeHash)
+                    // val challengeHash =
+                    //     MessageDigest.getInstance("SHA-256")
+                    //         .digest(challenge.toByteArray(Charsets.UTF_8))
+                    //crypto?.update(challengeHash)
+                    crypto?.update(challenge.toByteArray(Charsets.UTF_8))
                     val signed = crypto?.sign()
 
                     result.success(
@@ -309,9 +310,11 @@ class BiometricCryptoPlugin :
             .setTitle("Biometric Authentication")
             .setSubtitle("Confirm to sign challenge")
             .setAllowedAuthenticators(
-                BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                BiometricManager.Authenticators.BIOMETRIC_STRONG 
+                //or
+                //BiometricManager.Authenticators.DEVICE_CREDENTIAL
             )
+            .setNegativeButtonText("Cancel")
             .build()
 
         biometricPrompt.authenticate(

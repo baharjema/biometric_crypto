@@ -1,14 +1,30 @@
-# biometric_crypto
+# 🔐 biometric_crypto
 
-`biometric_crypto` is a Flutter plugin that provides secure biometric authentication. It generates a key pair using AndroidKeyStore (on Android) or the Secure Enclave (on iOS) and returns the public key. The public key can then be sent to your server for verification during biometric sign-in.
+A robust Flutter plugin that provides **secure biometric authentication** with cryptographic key generation.
 
-> ⚠️ **Note:** On the iOS Simulator the Secure Enclave is not available. A biometric prompt will appear each time a key is generated.
+## ✨ Features
 
-## Getting Started
+- **Secure Key Generation**: Generates RSA key pairs using platform-specific secure storage:
+  - 🤖 AndroidKeyStore on Android
+  - 🍎 Secure Enclave on iOS
+- **Public Key Export**: Returns the public key for server-side verification
+- **Biometric Authentication**: Seamless biometric sign-in verification
+- **Cross-Platform**: Supports both Android and iOS
 
-### Android
+## 📋 Requirements
 
-1. Ensure your `MainActivity` extends `FlutterFragmentActivity`:
+- Flutter SDK
+- Android 5.0+ (API level 21) or iOS 12.0+
+
+---
+
+## 🚀 Getting Started
+
+### Android Setup
+
+#### 1. Update MainActivity
+
+Ensure your `MainActivity` extends `FlutterFragmentActivity`:
 
 ```kotlin
 class MainActivity : FlutterFragmentActivity() {
@@ -16,14 +32,18 @@ class MainActivity : FlutterFragmentActivity() {
 }
 ```
 
-2. Add the necessary permissions to your `AndroidManifest.xml`:
+#### 2. Add Required Permissions
+
+Add the following permissions to your `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 ```
 
-### iOS
+### iOS Setup
+
+#### Add Face ID Usage Description
 
 Add a Face ID usage description to your `Info.plist`:
 
@@ -34,4 +54,18 @@ Add a Face ID usage description to your `Info.plist`:
 
 ---
 
-Feel free to extend this README with examples, API usage, or troubleshooting tips as needed.
+## ⚠️ Important Notes
+
+> **iOS Simulator Limitation**: The Secure Enclave is not available on the iOS Simulator. A biometric prompt will appear when calling authenticate methods before sign-in.
+
+---
+
+## 📚 Next Steps
+
+- Explore the example app in the `example/` directory
+- Check out the API documentation for detailed method references
+- Review integration tests in `integration_test/` for implementation patterns
+
+---
+
+For questions, contributions, or to report issues, please visit the project repository or refer to the troubleshooting section in the documentation.

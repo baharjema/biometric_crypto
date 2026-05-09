@@ -1,5 +1,11 @@
+## 1.0.6
+
+- Change ReadMe.md to clear information
+
 ## 1.0.5
+
 - Solve signature for android
+
 ## 1.0.4
 
 - Add device_info_plus to example

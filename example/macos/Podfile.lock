@@ -1,0 +1,28 @@
+PODS:
+  - biometric_crypto (0.0.1):
+    - FlutterMacOS
+  - device_info_plus (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+
+DEPENDENCIES:
+  - biometric_crypto (from `Flutter/ephemeral/.symlinks/plugins/biometric_crypto/macos`)
+  - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+
+EXTERNAL SOURCES:
+  biometric_crypto:
+    :path: Flutter/ephemeral/.symlinks/plugins/biometric_crypto/macos
+  device_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+
+SPEC CHECKSUMS:
+  biometric_crypto: 215b095ad7857449f7f6050381548eae6e5195a0
+  device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
+  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+
+PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
+
+COCOAPODS: 1.16.2

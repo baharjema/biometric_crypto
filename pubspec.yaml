@@ -41,6 +41,10 @@ flutter:
         pluginClass: BiometricCryptoPlugin
       ios:
         pluginClass: BiometricCryptoPlugin
+      macos:
+        pluginClass: BiometricCryptoPlugin
+      windows:
+        pluginClass: BiometricCryptoPluginCApi
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

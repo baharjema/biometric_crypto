@@ -51,6 +51,16 @@ Add a Face ID usage description to your `Info.plist`:
 <key>NSFaceIDUsageDescription</key>
 <string>Biometric authentication is used to secure your account.</string>
 ```
+### macOS Setup
+
+```
+1. Open your project's macOS workspace: open macos/Runner.xcworkspace
+2. In the project navigator, click on the Runner project, then select the Runner target.
+3. Go to the Signing & Capabilities tab.
+4. Click the + Capability button in the top left corner.
+5. Search for Keychain Sharing and double-click to add it.
+```
+
 
 ---
 

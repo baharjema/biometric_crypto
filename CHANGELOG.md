@@ -1,3 +1,7 @@
+## 1.0.7
+
+- Add macos support
+
 ## 1.0.6
 
 - Change ReadMe.md to clear information
